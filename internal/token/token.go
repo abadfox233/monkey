@@ -26,7 +26,7 @@ const (
 	LT = "<"
 	GT = ">"
 
-	EQ    = "=="
+	EQ     = "=="
 	NOT_EQ = "!="
 
 	// 分隔符
@@ -41,22 +41,21 @@ const (
 	// 关键字
 	FUNCTION = "FUNCTION"
 	LET      = "LET"
-	TRUE    = "TRUE"
-	FALSE   = "FALSE"
-	IF      = "IF"
-	ELSE    = "ELSE"
-	RETRUN = "RETRUN"
+	TRUE     = "TRUE"
+	FALSE    = "FALSE"
+	IF       = "IF"
+	ELSE     = "ELSE"
+	RETURN   = "RETRUN"
 )
 
 var keywords = map[string]TokenType{
-	"fn":  FUNCTION,
-	"let": LET,
-	"true": TRUE,
-	"false": FALSE,
-	"if": IF,
-	"else": ELSE,
-	"return": RETRUN,
-
+	"fn":     FUNCTION,
+	"let":    LET,
+	"true":   TRUE,
+	"false":  FALSE,
+	"if":     IF,
+	"else":   ELSE,
+	"return": RETURN,
 }
 
 func LookupIdent(ident string) TokenType {

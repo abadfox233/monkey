@@ -7,12 +7,11 @@ import (
 )
 
 type Parser struct {
-	l *lexer.Lexer
+	l         *lexer.Lexer
 	curToken  token.Token
 	peekToken token.Token
-	errors []string
+	errors    []string
 }
-
 
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{l: l,
@@ -29,11 +28,11 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
-func (p *Parser) curTokenIs(t token.TokenType) bool{
+func (p *Parser) curTokenIs(t token.TokenType) bool {
 	return p.curToken.Type == t
 }
 
-func (p *Parser) peekTokenIs(t token.TokenType) bool{
+func (p *Parser) peekTokenIs(t token.TokenType) bool {
 	return p.peekToken.Type == t
 }
 
@@ -58,7 +57,6 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 	}
 }
 
-
 func (p *Parser) ParseProgram() *ast.Program {
 
 	program := &ast.Program{}
@@ -80,13 +78,16 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.LET:
 		// 解析let语句
 		return p.parseLetStatement()
+	case token.RETURN:
+		// 解析return语句
+		return p.parseReturnStatement()
 	default:
 		return nil
 	}
 }
 
 func (p *Parser) parseLetStatement() *ast.LetStatement {
-	
+
 	stmt := &ast.LetStatement{Token: p.curToken}
 
 	// 解析let后面的标识符
@@ -109,3 +110,14 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 	return stmt
 }
 
+func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
+	stmt := &ast.ReturnStatement{Token: p.curToken}
+
+	p.nextToken()
+
+	for !p.curTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
