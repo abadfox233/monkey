@@ -153,3 +153,29 @@ func (pe *PrefixExpression) String() string {
 
 	return out
 }
+
+
+type InfixExpression struct {
+	Token    token.Token // 操作符token，比如+
+	Left     Expression
+	Operator string
+	Right    Expression
+}
+
+func (ie *InfixExpression) expressionNode() {}
+func (ie *InfixExpression) TokenLiteral() string {
+	return ie.Token.Literal
+}
+func (ie *InfixExpression) String() string {
+	
+	var out string
+
+	out += "("
+	out += ie.Left.String()
+	out += " " + ie.Operator + " "
+	out += ie.Right.String()
+	out += ")"
+
+	return out
+}
+
