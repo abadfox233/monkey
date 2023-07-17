@@ -12,7 +12,7 @@ type (
 	// 前缀解析函数
 	prefixParseFn func() ast.Expression
 	// 中缀解析函数
-	infixParseFn  func(ast.Expression) ast.Expression
+	infixParseFn func(ast.Expression) ast.Expression
 )
 
 const (
@@ -45,7 +45,6 @@ var precedences = map[token.TokenType]int{
 	token.ASTERISK: PRODUCT,
 }
 
-
 type Parser struct {
 	l         *lexer.Lexer
 	curToken  token.Token
@@ -58,7 +57,7 @@ type Parser struct {
 
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{l: l,
-		errors: []string{},
+		errors:         []string{},
 		prefixParseFns: make(map[token.TokenType]prefixParseFn),
 		infixParseFns:  make(map[token.TokenType]infixParseFn),
 	}
@@ -161,7 +160,7 @@ func (p *Parser) parseStatement() ast.Statement {
 		// 解析return语句
 		return p.parseReturnStatement()
 	default:
-		return p.parseExpressionStatement();
+		return p.parseExpressionStatement()
 	}
 }
 
@@ -203,6 +202,7 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 
 // 解析表达式语句
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	// defer untrace(trace("parseExpressionStatement"))
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
 	// 解析表达式
 	stmt.Expression = p.parseExpression(LOWEST)
@@ -215,6 +215,7 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 
 // 解析表达式
 func (p *Parser) parseExpression(precedence int) ast.Expression {
+	// defer untrace(trace("parseExpression"))
 	// 前缀解析函数
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
@@ -247,6 +248,7 @@ func (p *Parser) parseIdentifier() ast.Expression {
 
 // 解析整型字面量
 func (p *Parser) parseIntegerLiteral() ast.Expression {
+	// defer untrace(trace("parseIntegerLiteral"))
 	literal := &ast.IntegerLiteral{Token: p.curToken}
 	// 解析整型字面量
 	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
@@ -267,6 +269,7 @@ func (p *Parser) noPrefixParseFnError(t token.TokenType) {
 
 // 解析前缀表达式
 func (p *Parser) parsePrefixExpression() ast.Expression {
+	// defer untrace(trace("parsePrefixExpression"))
 	expression := &ast.PrefixExpression{
 		Token:    p.curToken,
 		Operator: p.curToken.Literal,
@@ -278,9 +281,9 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 	return expression
 }
 
-
 // 解析中缀表达式
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	// defer untrace(trace("parseInfixExpression"))
 	expression := &ast.InfixExpression{
 		Token:    p.curToken,
 		Operator: p.curToken.Literal,
