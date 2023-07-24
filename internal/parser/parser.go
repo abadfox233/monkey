@@ -43,6 +43,7 @@ var precedences = map[token.TokenType]int{
 	token.MINUS:    SUM,
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
+	token.LPAREN:   CALL,
 }
 
 type Parser struct {
@@ -85,6 +86,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
+	// 注册函数调用解析函数
+	p.registerInfix(token.LPAREN, p.parseCallExpression)
 	return p
 }
 
@@ -171,6 +174,46 @@ func (p *Parser) parseStatement() ast.Statement {
 	}
 }
 
+// 解析函数调用
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	exp := &ast.CallExpression{Token: p.curToken, Function: function}
+	// 解析函数参数
+	exp.Arguments = p.parseCallArguments()
+	return exp
+}
+
+// 解析函数参数
+func (p *Parser) parseCallArguments()[]ast.Expression {
+
+	args := []ast.Expression{}
+
+	// 如果下一个token是右括号，说明没有参数
+	if p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+		return args
+	}
+
+	// 读取下一个token
+	p.nextToken()
+	// 解析参数
+	args = append(args, p.parseExpression(LOWEST))
+	// 如果下一个token是逗号，说明还有参数
+	for p.peekTokenIs(token.COMMA) {
+		// 读取下一个token
+		p.nextToken()
+		// 读取下一个token
+		p.nextToken()
+		// 解析参数
+		args = append(args, p.parseExpression(LOWEST))
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	return args
+}
+
+// 解析let语句
 func (p *Parser) parseLetStatement() *ast.LetStatement {
 
 	stmt := &ast.LetStatement{Token: p.curToken}
@@ -195,6 +238,7 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 	return stmt
 }
 
+// 解析函数字面量
 func (p *Parser) parseFunctionLiteral() ast.Expression {
 
 	lit := &ast.FunctionLiteral{Token: p.curToken}
