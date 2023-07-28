@@ -215,26 +215,25 @@ func (p *Parser) parseCallArguments()[]ast.Expression {
 
 // 解析let语句
 func (p *Parser) parseLetStatement() *ast.LetStatement {
-
 	stmt := &ast.LetStatement{Token: p.curToken}
-
 	// 解析let后面的标识符
 	if !p.expectPeek(token.IDENT) {
 		return nil
 	}
-
 	// 标识符
 	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-
 	// 解析等号
 	if !p.expectPeek(token.ASSIGN) {
 		return nil
 	}
-
-	for !p.curTokenIs(token.SEMICOLON) {
+	// 读取下一个token
+	p.nextToken()
+	// 解析等号右侧的表达式
+	stmt.Value = p.parseExpression(LOWEST)
+	// 解析分号
+	for p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
-
 	return stmt
 }
 
@@ -348,7 +347,10 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 
 	p.nextToken()
 
-	for !p.curTokenIs(token.SEMICOLON) {
+	// 解析return后面的表达式
+	stmt.ReturnValue = p.parseExpression(LOWEST)
+	// 解析分号
+	for p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 
