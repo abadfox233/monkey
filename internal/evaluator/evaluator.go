@@ -20,6 +20,9 @@ func Eval(node ast.Node) object.Object {
 	// 语句
 	case *ast.ReturnStatement:
 		val := Eval(node.ReturnValue)
+		if isError(val) {
+			return val
+		}
 		return &object.ReturnValue{Value: val}
 	case *ast.BlockStatement:
 		return evalBlockStatement(node)
@@ -27,12 +30,21 @@ func Eval(node ast.Node) object.Object {
 		return evalProgram(node.Statements)
 	case *ast.PrefixExpression:
 		right := Eval(node.Right)
+		if isError(right) {
+			return right
+		}
 		return evalPrefixExpression(node.Operator, right)
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression)
 	case *ast.InfixExpression:
 		left := Eval(node.Left)
+		if isError(left) {
+			return left
+		}
 		right := Eval(node.Right)
+		if isError(right) {
+			return right
+		}
 		return evalInfixExpression(node.Operator, left, right)
 	// 表达式
 	case *ast.IntegerLiteral:
@@ -43,6 +55,13 @@ func Eval(node ast.Node) object.Object {
 
 	return nil
 
+}
+
+func isError(obj object.Object) bool {
+	if obj != nil {
+		return obj.Type() == object.ERROR_OBJ
+	}
+	return false
 }
 
 func evalProgram(stmts []ast.Statement) object.Object {
@@ -92,7 +111,9 @@ func evalPrefixExpression(operator string, right object.Object) object.Object {
 
 func evalIfExpression(ie *ast.IfExpression) object.Object {
 	condition := Eval(ie.Condition)
-
+	if isError(condition) {
+		return condition
+	}
 	if isTruthy(condition) {
 		return Eval(ie.Consequence)
 	} else if ie.Alternative != nil {
