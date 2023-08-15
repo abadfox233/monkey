@@ -1,6 +1,9 @@
 package lexer
 
-import "monkey/internal/token"
+import (
+	"monkey/internal/token"
+	"strings"
+)
 
 type Lexer struct {
 	input        string
@@ -30,7 +33,6 @@ func (l *Lexer) readChar() {
 	l.readPosition += 1
 }
 
-
 // 读取下一个字符
 func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
@@ -38,6 +40,10 @@ func (l *Lexer) NextToken() token.Token {
 	l.skipWhitespace()
 
 	switch l.ch {
+	case '"':
+		// 读取字符串
+		tok.Type = token.STRING
+		tok.Literal = l.readString()
 	case '=':
 		if l.peekChar() == '=' {
 			// 读取下一个字符
@@ -106,6 +112,48 @@ func (l *Lexer) NextToken() token.Token {
 
 }
 
+func (l *Lexer) readString() string {
+
+	buffer := strings.Builder{}
+
+	for {
+		l.readChar()
+		if l.ch == '\\' {
+			l.readChar()
+			switch l.ch {
+			case '0':
+				buffer.WriteString(string('\000'))
+			case 'a':
+				buffer.WriteString(string('\a'))
+			case 'b':
+				buffer.WriteString(string('\b'))
+			case 'f':
+				buffer.WriteString(string('\f'))
+			case 'v':
+				buffer.WriteString(string('\v'))
+			case '"':
+				buffer.WriteString(string('"'))
+			case 'n':
+				buffer.WriteString(string('\n'))
+			case 't':
+				buffer.WriteString(string('\t'))
+			case 'r':
+				buffer.WriteString(string('\r'))
+			case '\\':
+				buffer.WriteString(string('\\'))
+			default:
+				buffer.WriteString(string('\\'))
+				buffer.WriteString(string(l.ch))
+			}
+		} else if l.ch == '"' || l.ch == 0 {
+			break
+		} else {
+			buffer.WriteString(string(l.ch))
+		}
+	}
+	return buffer.String()
+}
+
 func (l *Lexer) readIdentifier() string {
 	position := l.position
 	for isLetter(l.ch) {
@@ -114,10 +162,9 @@ func (l *Lexer) readIdentifier() string {
 	return l.input[position:l.position]
 }
 
-func isLetter(ch byte) bool {	
+func isLetter(ch byte) bool {
 	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
 }
-
 
 func (l *Lexer) readNumber() string {
 	position := l.position
@@ -142,7 +189,6 @@ func (l *Lexer) skipWhitespace() {
 		l.readChar()
 	}
 }
-
 
 func (l *Lexer) peekChar() byte {
 	if l.readPosition >= len(l.input) {

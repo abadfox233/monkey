@@ -250,7 +250,7 @@ func (fl *FunctionLiteral) TokenLiteral() string {
 	return fl.Token.Literal
 }
 func (fl *FunctionLiteral) String() string {
-	
+
 	var out bytes.Buffer
 
 	params := []string{}
@@ -292,4 +292,17 @@ func (ce *CallExpression) String() string {
 	out.WriteString(")")
 
 	return out.String()
+}
+
+type StringLiteral struct {
+	Token token.Token
+	Value string
+}
+
+func (sl *StringLiteral) expressionNode() {}
+func (sl *StringLiteral) TokenLiteral() string {
+	return sl.Token.Literal
+}
+func (sl *StringLiteral) String() string {
+	return sl.Token.Literal
 }

@@ -14,6 +14,10 @@ const (
 	// 标识符 + 字面量
 	IDENT = "IDENT" // add, foobar, x, y, ...
 	INT   = "INT"   // 123456789
+	STRING = "STRING" // "abc"
+	// TODO: 
+	// FLOAT = "FLOAT" // 123.456
+
 
 	// 运算符
 	ASSIGN   = "="
@@ -28,6 +32,14 @@ const (
 
 	EQ     = "=="
 	NOT_EQ = "!="
+	// TODO:
+	// LT_EQ = "<="
+	// GT_EQ = ">="
+	// AND = "&&"
+	// OR = "||"
+
+
+
 
 	// 分隔符
 	COMMA     = ","
@@ -46,6 +58,12 @@ const (
 	IF       = "IF"
 	ELSE     = "ELSE"
 	RETURN   = "RETRUN"
+	// TODO:
+	// FOR = "FOR"
+	// WHILE = "WHILE"
+	// BREAK = "BREAK"
+	// CONTINUE = "CONTINUE"
+	
 )
 
 var keywords = map[string]TokenType{
