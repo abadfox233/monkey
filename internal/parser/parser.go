@@ -73,6 +73,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.TRUE, p.parseBoolean)
 	p.registerPrefix(token.FALSE, p.parseBoolean)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
+	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
 	// 注册括号解析函数
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.IF, p.parseIfExpression)
@@ -175,44 +176,49 @@ func (p *Parser) parseStatement() ast.Statement {
 	}
 }
 
-// 解析函数调用
-func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
-	exp := &ast.CallExpression{Token: p.curToken, Function: function}
-	// 解析函数参数
-	exp.Arguments = p.parseCallArguments()
-	return exp
+func (p *Parser) parseArrayLiteral() ast.Expression{
+	array := &ast.ArrayLiteral{Token: p.curToken}
+	array.Elements = p.parseExpressionList(token.RBRACKET)
+	return array
 }
 
-// 解析函数参数
-func (p *Parser) parseCallArguments()[]ast.Expression {
-
-	args := []ast.Expression{}
-
-	// 如果下一个token是右括号，说明没有参数
-	if p.peekTokenIs(token.RPAREN) {
+// 解析表达式列表语句
+func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
+	list := []ast.Expression{}
+	// 如果下一个token是结束符，说明没有表达式
+	if p.peekTokenIs(end) {
+		// 读取下一个token
 		p.nextToken()
-		return args
+		return list
 	}
-
 	// 读取下一个token
 	p.nextToken()
-	// 解析参数
-	args = append(args, p.parseExpression(LOWEST))
-	// 如果下一个token是逗号，说明还有参数
+	// 解析表达式
+	list = append(list, p.parseExpression(LOWEST))
+	// 如果下一个token是逗号，说明还有表达式
 	for p.peekTokenIs(token.COMMA) {
 		// 读取下一个token
 		p.nextToken()
 		// 读取下一个token
 		p.nextToken()
-		// 解析参数
-		args = append(args, p.parseExpression(LOWEST))
+		// 解析表达式
+		list = append(list, p.parseExpression(LOWEST))
 	}
-
-	if !p.expectPeek(token.RPAREN) {
+	// 如果下一个token不是结束符，报错
+	if !p.expectPeek(end) {
 		return nil
 	}
-	return args
+	return list
 }
+
+// 解析函数调用
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	exp := &ast.CallExpression{Token: p.curToken, Function: function}
+	// 解析函数参数
+	exp.Arguments = p.parseExpressionList(token.RPAREN)
+	return exp
+}
+
 
 // 解析let语句
 func (p *Parser) parseLetStatement() *ast.LetStatement {

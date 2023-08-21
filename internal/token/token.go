@@ -27,6 +27,9 @@ const (
 	ASTERISK = "*"
 	SLASH    = "/"
 
+	LBRACKET = "["
+    RBRACKET = "]"
+
 	LT = "<"
 	GT = ">"
 
@@ -63,7 +66,7 @@ const (
 	// WHILE = "WHILE"
 	// BREAK = "BREAK"
 	// CONTINUE = "CONTINUE"
-	
+
 )
 
 var keywords = map[string]TokenType{
