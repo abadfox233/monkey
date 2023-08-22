@@ -31,6 +31,8 @@ const (
 	PREFIX
 	// 括号、函数调用
 	CALL
+	// [
+	INDEX
 )
 
 // 操作符优先级
@@ -44,6 +46,7 @@ var precedences = map[token.TokenType]int{
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
 	token.LPAREN:   CALL,
+	token.LBRACKET: INDEX,
 }
 
 type Parser struct {
@@ -88,6 +91,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
+	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
 	// 注册函数调用解析函数
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
 	return p
@@ -176,6 +180,21 @@ func (p *Parser) parseStatement() ast.Statement {
 	}
 }
 
+// 解析数组索引表达式
+func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
+	exp := &ast.IndexExpression{Token: p.curToken, Left: left}
+	// 读取下一个token
+	p.nextToken()
+	// 解析索引表达式
+	exp.Index = p.parseExpression(LOWEST)
+	// 期望下一个token是]
+	if !p.expectPeek(token.RBRACKET) {
+		return nil
+	}
+	return exp
+}
+
+// 解析数组字面量
 func (p *Parser) parseArrayLiteral() ast.Expression{
 	array := &ast.ArrayLiteral{Token: p.curToken}
 	array.Elements = p.parseExpressionList(token.RBRACKET)
