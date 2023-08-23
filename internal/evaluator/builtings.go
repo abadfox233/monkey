@@ -12,6 +12,7 @@ var builtins = map[string]*object.Builtin{
 	"last":      {Fn: last},
 	"rest":      {Fn: rest},
 	"push":      {Fn: push},
+	"puts":      {Fn: puts},
 }
 
 func lenObject(args ...object.Object) object.Object {
@@ -103,4 +104,11 @@ func timestamp(args ...object.Object) object.Object {
 		return newError("wrong number of arguments. got=%d, want=0", len(args))
 	}
 	return &object.Integer{Value: time.Now().Unix()}
+}
+
+func puts(args ...object.Object) object.Object {
+	for _, arg := range args {
+		println(arg.Inspect())
+	}
+	return NULL
 }
