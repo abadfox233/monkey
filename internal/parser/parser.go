@@ -77,6 +77,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.FALSE, p.parseBoolean)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
 	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
+	p.registerPrefix(token.LBRACE, p.parseHashLiteral)
 	// 注册括号解析函数
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.IF, p.parseIfExpression)
@@ -120,6 +121,36 @@ func (p *Parser) peekTokenIs(t token.TokenType) bool {
 
 func (p *Parser) Errors() []string {
 	return p.errors
+}
+
+func (p *Parser) parseHashLiteral() ast.Expression {
+
+	hash := &ast.HashLiteral{Token: p.curToken}
+	hash.Pairs = make(map[ast.Expression]ast.Expression)
+
+	for !p.peekTokenIs(token.RBRACE) {
+		p.nextToken()
+		// 解析key
+		key := p.parseExpression(LOWEST)
+		if !p.expectPeek(token.COLON) {
+			return nil
+		}
+		// 解析value
+		p.nextToken()
+		value := p.parseExpression(LOWEST)
+		hash.Pairs[key] = value
+		// 如果下一个token是逗号，继续解析
+		if !p.peekTokenIs(token.RBRACE) && !p.expectPeek(token.COMMA) {
+			return nil
+		}
+	}
+	// 期望下一个token是右括号
+	if !p.expectPeek(token.RBRACE) {
+		return nil
+	}
+
+	return hash
+
 }
 
 func (p *Parser) peekError(t token.TokenType) {
@@ -195,7 +226,7 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 }
 
 // 解析数组字面量
-func (p *Parser) parseArrayLiteral() ast.Expression{
+func (p *Parser) parseArrayLiteral() ast.Expression {
 	array := &ast.ArrayLiteral{Token: p.curToken}
 	array.Elements = p.parseExpressionList(token.RBRACKET)
 	return array
@@ -237,7 +268,6 @@ func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	exp.Arguments = p.parseExpressionList(token.RPAREN)
 	return exp
 }
-
 
 // 解析let语句
 func (p *Parser) parseLetStatement() *ast.LetStatement {
@@ -312,7 +342,7 @@ func (p *Parser) parseIfExpression() ast.Expression {
 		}
 
 		expression.Alternative = p.parseBlockStatement()
-	
+
 	}
 	return expression
 }
@@ -505,4 +535,3 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	expression.Right = p.parseExpression(precedence)
 	return expression
 }
-

@@ -30,6 +30,8 @@ const (
 	LBRACKET = "["
     RBRACKET = "]"
 
+	COLON = ":"
+
 	LT = "<"
 	GT = ">"
 
