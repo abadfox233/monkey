@@ -6,16 +6,16 @@ import (
 )
 
 type Lexer struct {
-	input        string
-	position     int  // 当前字符的位置
+	input        []rune
+	position     int  // 当前字符的位置 
 	readPosition int  // 当前读取字符的位置
-	ch           byte // 当前字符
+	ch           rune // 当前字符
 
 }
 
 func New(input string) *Lexer {
 
-	l := &Lexer{input: input}
+	l := &Lexer{input: []rune(input)}
 
 	l.readChar()
 
@@ -165,10 +165,10 @@ func (l *Lexer) readIdentifier() string {
 	for isLetter(l.ch) {
 		l.readChar()
 	}
-	return l.input[position:l.position]
+	return string(l.input[position:l.position])
 }
 
-func isLetter(ch byte) bool {
+func isLetter(ch rune) bool {
 	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
 }
 
@@ -177,16 +177,16 @@ func (l *Lexer) readNumber() string {
 	for isDigit(l.ch) {
 		l.readChar()
 	}
-	return l.input[position:l.position]
+	return string(l.input[position:l.position])
 
 }
 
-func isDigit(ch byte) bool {
+func isDigit(ch rune) bool {
 	return '0' <= ch && ch <= '9'
 }
 
 // 生成token
-func newToken(tokenType token.TokenType, ch byte) token.Token {
+func newToken(tokenType token.TokenType, ch rune) token.Token {
 	return token.Token{Type: tokenType, Literal: string(ch)}
 }
 
@@ -196,7 +196,7 @@ func (l *Lexer) skipWhitespace() {
 	}
 }
 
-func (l *Lexer) peekChar() byte {
+func (l *Lexer) peekChar() rune {
 	if l.readPosition >= len(l.input) {
 		return 0
 	} else {

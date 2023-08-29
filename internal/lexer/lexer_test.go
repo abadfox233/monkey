@@ -29,6 +29,7 @@ func TestNextToken(t *testing.T) {
 	"Hello, World!\n\""
 	[1, 2];
 	{"foo": "bar"}
+	"你好中国"
 
 	`
 
@@ -123,6 +124,7 @@ func TestNextToken(t *testing.T) {
 		{token.COLON, ":"},
 		{token.STRING, "bar"},
 		{token.RBRACE, "}"},
+		{token.STRING, "你好中国"},
 		{token.EOF, ""},
 	}
 
