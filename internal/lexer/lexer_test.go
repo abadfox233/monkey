@@ -30,6 +30,7 @@ func TestNextToken(t *testing.T) {
 	[1, 2];
 	{"foo": "bar"}
 	"你好中国"
+	0.123
 
 	`
 
@@ -125,6 +126,7 @@ func TestNextToken(t *testing.T) {
 		{token.STRING, "bar"},
 		{token.RBRACE, "}"},
 		{token.STRING, "你好中国"},
+		{token.FLOAT, "0.123"},
 		{token.EOF, ""},
 	}
 

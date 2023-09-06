@@ -7,7 +7,7 @@ import (
 
 type Lexer struct {
 	input        []rune
-	position     int  // 当前字符的位置 
+	position     int  // 当前字符的位置
 	readPosition int  // 当前读取字符的位置
 	ch           rune // 当前字符
 
@@ -105,8 +105,7 @@ func (l *Lexer) NextToken() token.Token {
 			tok.Type = token.LookupIdent(tok.Literal)
 			return tok
 		} else if isDigit(l.ch) { // 数字
-			tok.Type = token.INT
-			tok.Literal = l.readNumber()
+			tok.Literal, tok.Type = l.readNumber()
 			return tok
 		} else { // 未知字符
 			tok = newToken(token.ILLEGAL, l.ch)
@@ -172,13 +171,18 @@ func isLetter(ch rune) bool {
 	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
 }
 
-func (l *Lexer) readNumber() string {
+func (l *Lexer) readNumber() (string, token.TokenType) {
 	position := l.position
-	for isDigit(l.ch) {
+	for isDigit(l.ch) || l.ch == '.' {
 		l.readChar()
 	}
-	return string(l.input[position:l.position])
-
+	// 判断是否为浮点数
+	numStr := string(l.input[position:l.position])
+	if strings.Contains(numStr, ".") {
+		return numStr, token.FLOAT
+	} else {
+		return numStr, token.INT
+	}
 }
 
 func isDigit(ch rune) bool {

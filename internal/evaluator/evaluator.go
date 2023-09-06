@@ -88,6 +88,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalInfixExpression(node.Operator, left, right)
 	case *ast.Identifier:
 		return evalIdentifier(node, env)
+	case *ast.FloatLiteral:
+		return &object.Float{Value: node.Value}
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
 	case *ast.Boolean:
@@ -291,6 +293,14 @@ func isTruthy(input object.Object) bool {
 
 func evalInfixExpression(operator string, left, right object.Object) object.Object {
 	switch {
+	case left.Type() == object.FLOAT_OBJ || right.Type() == object.FLOAT_OBJ:
+		if _, ok := left.(object.Number); !ok {
+			return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+		}
+		if _, ok := right.(object.Number); !ok {
+			return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+		}
+		return evalFloatInfixExpression(operator, left, right)
 	case left.Type() == object.STRING_OBJ && right.Type() == object.STRING_OBJ:
 		return evalStringInfixExpression(operator, left, right)
 	case left.Type() != right.Type():
@@ -333,6 +343,32 @@ func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object
 	}
 
 	return newError("identifier not found: " + node.Value)
+}
+
+func evalFloatInfixExpression(operator string, left, right object.Object) object.Object {
+	leftVal := left.(object.Number).Float()
+	rightVal := right.(object.Number).Float()
+
+	switch operator {
+	case "+":
+		return &object.Float{Value: leftVal + rightVal}
+	case "-":
+		return &object.Float{Value: leftVal - rightVal}
+	case "*":
+		return &object.Float{Value: leftVal * rightVal}
+	case "/":
+		return &object.Float{Value: leftVal / rightVal}
+	case "<":
+		return nativeBoolToBooleanObject(leftVal < rightVal)
+	case ">":
+		return nativeBoolToBooleanObject(leftVal > rightVal)
+	case "==":
+		return nativeBoolToBooleanObject(leftVal == rightVal)
+	case "!=":
+		return nativeBoolToBooleanObject(leftVal != rightVal)
+	default:
+		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+	}
 }
 
 func evalIntegerInfixExpression(operator string, left, right object.Object) object.Object {
@@ -382,6 +418,8 @@ func evalBangOperatorExpression(right object.Object) object.Object {
 func evalMinusPrefixOperatorExpression(right object.Object) object.Object {
 
 	switch node := right.(type) {
+	case *object.Float:
+		return &object.Float{Value: -node.Value}
 	case *object.Integer:
 		return &object.Integer{Value: -node.Value}
 	default:

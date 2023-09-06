@@ -15,8 +15,7 @@ const (
 	IDENT = "IDENT" // add, foobar, x, y, ...
 	INT   = "INT"   // 123456789
 	STRING = "STRING" // "abc"
-	// TODO: 
-	// FLOAT = "FLOAT" // 123.456
+	FLOAT = "FLOAT" // 123.456
 
 
 	// 运算符

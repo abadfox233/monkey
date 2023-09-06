@@ -24,10 +24,16 @@ const (
 	ARRAY_OBJ        = "ARRAY"
 	HASH_OBJ         = "HASH"
 	QUOTE_OBJ        = "QUOTE"
+	FLOAT_OBJ        = "FLOAT"
 )
 
 type Hashable interface {
 	HashKey() HashKey
+}
+
+type Number interface {
+	Float() float64
+	Integer() int64
 }
 
 var _ Object = (*Integer)(nil)
@@ -39,10 +45,15 @@ var _ Object = (*Function)(nil)
 var _ Object = (*String)(nil)
 var _ Object = (*Builtin)(nil)
 var _ Object = (*Array)(nil)
+var _ Object = (*Float)(nil)
 
 var _ Hashable = (*String)(nil)
 var _ Hashable = (*Boolean)(nil)
 var _ Hashable = (*Integer)(nil)
+var _ Hashable = (*Float)(nil)
+
+var _ Number = (*Integer)(nil)
+var _ Number = (*Float)(nil)
 
 type HashKey struct {
 	Type  ObjectType
@@ -54,6 +65,20 @@ type Object interface {
 	Inspect() string
 }
 
+type Float struct {
+	Value float64
+}
+
+func (f *Float) Inspect() string  { return fmt.Sprintf("%f", f.Value) }
+func (f *Float) Type() ObjectType { return FLOAT_OBJ }
+func (f *Float) HashKey() HashKey {
+	h := fnv.New64a()
+	h.Write([]byte(fmt.Sprintf("%.15f", f.Value)))
+	return HashKey{Type: f.Type(), Value: h.Sum64()}
+}
+func (f *Float) Float() float64 { return f.Value }
+func (f *Float) Integer() int64         { return int64(f.Value) }
+
 type Integer struct {
 	Value int64
 }
@@ -63,6 +88,8 @@ func (i *Integer) Type() ObjectType { return INTEGER_OBJ }
 func (i *Integer) HashKey() HashKey {
 	return HashKey{Type: i.Type(), Value: uint64(i.Value)}
 }
+func (i *Integer) Float() float64 { return float64(i.Value) }
+func (i *Integer) Integer() int64         { return i.Value }
 
 type Boolean struct {
 	Value bool

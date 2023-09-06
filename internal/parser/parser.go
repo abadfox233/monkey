@@ -78,6 +78,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
 	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
 	p.registerPrefix(token.LBRACE, p.parseHashLiteral)
+	p.registerPrefix(token.FLOAT, p.parseFloatLiteral)
 	// 注册括号解析函数
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.IF, p.parseIfExpression)
@@ -490,6 +491,21 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 		return nil
 	}
 	// 整型字面量值
+	literal.Value = value
+	return literal
+}
+
+// 解析浮点字面量
+func (p *Parser) parseFloatLiteral() ast.Expression {
+	literal := &ast.FloatLiteral{Token: p.curToken}
+	// 解析浮点字面量
+	value, err := strconv.ParseFloat(p.curToken.Literal, 64)
+	if err != nil {
+		msg := "could not parse %q as float"
+		p.errors = append(p.errors, fmt.Sprintf(msg, p.curToken.Literal))
+		return nil
+	}
+	// 浮点字面量值
 	literal.Value = value
 	return literal
 }

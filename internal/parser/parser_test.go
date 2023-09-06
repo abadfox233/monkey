@@ -172,6 +172,30 @@ func TestParsingArrayLiterals(t *testing.T) {
 
 }
 
+func TestFloatLiteralExpression(t *testing.T) {
+	input := "5.5;"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+	if program == nil {
+		t.Fatalf("ParseProgram() returned nil")
+	}
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statements, got=%d", len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement, got=%T", program.Statements[0])
+	}
+	literal, ok := stmt.Expression.(*ast.FloatLiteral)
+	if !ok {
+		t.Fatalf("exp not *ast.FloatLiteral, got=%T", stmt.Expression)
+	}
+	testFloatLiteral(t, literal, 5.5)
+
+}
+
 func TestIntegerLiteralExpression(t *testing.T) {
 	input := "5;"
 	l := lexer.New(input)
@@ -481,6 +505,7 @@ func TestParsingInfixExpressions(t *testing.T) {
 		{"true==true;", true, "==", true},
 		{"true!=false;", true, "!=", false},
 		{"false==false;", false, "==", false},
+		{"5.5+10.20", 5.5, "+", 10.20},
 	}
 	for _, tt := range infixTests {
 		l := lexer.New(tt.input)
@@ -707,6 +732,8 @@ func testInfixExpression(t *testing.T, exp ast.Expression, left interface{}, ope
 
 func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{}) bool {
 	switch v := expected.(type) {
+	case float64:
+		return testFloatLiteral(t, exp, v)
 	case int:
 		return testIntegerLiteral(t, exp, int64(v))
 	case int64:
@@ -750,6 +777,19 @@ func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
 	}
 	if integ.TokenLiteral() != fmt.Sprintf("%d", value) {
 		t.Errorf("integ.TokenLiteral not %d, got=%s", value, integ.TokenLiteral())
+		return false
+	}
+	return true
+}
+
+func testFloatLiteral(t *testing.T, fl ast.Expression, value float64) bool {
+	floatVal, ok := fl.(*ast.FloatLiteral)
+	if !ok {
+		t.Errorf("fl not *ast.FloatLiteral, got=%T", fl)
+		return false
+	}
+	if floatVal.Value != value {
+		t.Errorf("floatVal.Value not %f, got=%f", value, floatVal.Value)
 		return false
 	}
 	return true
