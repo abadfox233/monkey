@@ -70,6 +70,60 @@ func (ls *LetStatement) String() string {
 	return out
 }
 
+type BreakStatement struct {
+	Token token.Token // token.BREAK
+}
+
+func (bs *BreakStatement) statementNode() {}
+func (bs *BreakStatement) TokenLiteral() string {
+	return bs.Token.Literal
+}
+func (bs *BreakStatement) String() string {
+	return bs.TokenLiteral() + ";"
+}
+
+type ContinueStatement struct {
+	Token token.Token // token.CONTINUE
+}
+
+func (cs *ContinueStatement) statementNode() {}
+func (cs *ContinueStatement) TokenLiteral() string {
+	return cs.Token.Literal
+}
+func (cs *ContinueStatement) String() string {
+	return cs.TokenLiteral() + ";"
+}
+
+
+type ForLoopStatement struct {
+	Token     token.Token // token.FOR
+	Init      Statement
+	Condition Expression
+	Post      Statement
+	Body      *BlockStatement
+}
+
+func (fls *ForLoopStatement) statementNode() {}
+func (fls *ForLoopStatement) TokenLiteral() string {
+	return fls.Token.Literal
+}
+func (fls *ForLoopStatement) String() string {
+	buffer := bytes.Buffer{}
+	buffer.WriteString(fls.TokenLiteral())
+	buffer.WriteString(" ")
+	buffer.WriteString("(")
+	buffer.WriteString(fls.Init.String())
+	buffer.WriteString("; ")
+	buffer.WriteString(fls.Condition.String())
+	buffer.WriteString("; ")
+	buffer.WriteString(fls.Post.String())
+	buffer.WriteString(") ")
+	buffer.WriteString("{ \n")
+	buffer.WriteString(fls.Body.String())
+	buffer.WriteString("}\n")
+	return buffer.String()
+}
+
 type Identifier struct {
 	Token token.Token // token.IDENT
 	Value string
@@ -136,7 +190,6 @@ func (fl *FloatLiteral) String() string {
 	return fl.Token.Literal
 }
 
-
 type IntegerLiteral struct {
 	Token token.Token
 	Value int64
@@ -168,6 +221,32 @@ func (pe *PrefixExpression) String() string {
 	out += pe.Operator
 	out += pe.Right.String()
 	out += ")"
+
+
+	return out
+}
+
+type AssignStatement struct {
+	Token token.Token // token.ASSIGN
+	Name  *Identifier
+	Value Expression
+}
+
+func (as *AssignStatement) statementNode() {}
+func (as *AssignStatement) TokenLiteral() string {
+	return as.Token.Literal
+}
+func (as *AssignStatement) String() string {
+
+	var out string
+
+	out += as.Name.String()
+	out += " = "
+
+	if as.Value != nil {
+		out += as.Value.String()
+	}
+	out += ";"
 
 	return out
 }

@@ -207,7 +207,19 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		// 解析return语句
 		return p.parseReturnStatement()
+	case token.BREAK:
+		return p.parseBreakStatement()
+	case token.FOR:
+		// 解析for语句
+		return p.parseForLoopStatement()
+	case token.CONTINUE:
+		// 解析continue语句
+		return p.parseContinueStatement()
 	default:
+		if p.curTokenIs(token.IDENT) && p.peekTokenIs(token.ASSIGN) {
+			// 解析赋值语句
+			return p.parseAssignStatement()
+		}
 		return p.parseExpressionStatement()
 	}
 }
@@ -277,6 +289,87 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 	if !p.expectPeek(token.IDENT) {
 		return nil
 	}
+	// 标识符
+	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	// 解析等号
+	if !p.expectPeek(token.ASSIGN) {
+		return nil
+	}
+	// 读取下一个token
+	p.nextToken()
+	// 解析等号右侧的表达式
+	stmt.Value = p.parseExpression(LOWEST)
+	// 解析分号
+	for p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+	return stmt
+}
+
+// 解析break语句
+func (p *Parser) parseBreakStatement() *ast.BreakStatement {
+	stmt := &ast.BreakStatement{Token: p.curToken}
+	for p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+	return stmt
+}
+
+// 解析continue语句
+func (p *Parser) parseContinueStatement() *ast.ContinueStatement {
+	stmt := &ast.ContinueStatement{Token: p.curToken}
+	for p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+	return stmt
+}
+
+// 解析for循环语句
+func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
+	stmt := &ast.ForLoopStatement{Token: p.curToken}
+	// 解析for后面的标识符
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+	p.nextToken()
+	// 如果下一个token是分号，说明没有初始化语句
+	if !p.curTokenIs(token.SEMICOLON) {
+		// 解析初始化语句
+		stmt.Init = p.parseStatement()
+	}
+	if p.curTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+	}
+	// 解析条件表达式
+	if !p.curTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.RPAREN) {
+		stmt.Condition = p.parseExpression(LOWEST)
+		// 解析分号
+		for p.peekTokenIs(token.SEMICOLON) {
+			p.nextToken()
+		}
+	}
+	if p.curTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+	}
+	// 解析循环后的表达式
+	if !p.curTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.RPAREN) {
+		stmt.Post = p.parseStatement()
+	}
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	p.nextToken()
+	stmt.Body = p.parseBlockStatement()
+	// 解析分号
+	for p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+	return stmt
+}
+
+// 解析赋值语句
+func (p *Parser) parseAssignStatement() *ast.AssignStatement {
+	stmt := &ast.AssignStatement{Token: p.curToken}
 	// 标识符
 	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 	// 解析等号

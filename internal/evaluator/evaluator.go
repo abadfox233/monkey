@@ -7,9 +7,11 @@ import (
 )
 
 var (
-	TRUE  = &object.Boolean{Value: true}
-	FALSE = &object.Boolean{Value: false}
-	NULL  = &object.Null{}
+	TRUE     = &object.Boolean{Value: true}
+	FALSE    = &object.Boolean{Value: false}
+	BREAK    = &object.Break{}
+	CONTINUE = &object.Continue{}
+	NULL     = &object.Null{}
 )
 
 func Eval(node ast.Node, env *object.Environment) object.Object {
@@ -32,12 +34,31 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return applyFunction(function, args)
 	case *ast.HashLiteral:
 		return evalHashLiteral(node, env)
+	case *ast.ForLoopStatement:
+		return evalForLoopStatement(node, env)
+	case *ast.AssignStatement:
+		val := Eval(node.Value, env)
+		if isError(val) {
+			return val
+		}
+		env.Upsert(node.Name.Value, val)
+		return val
 	case *ast.ArrayLiteral:
 		elements := evalExpressions(node.Elements, env)
 		if len(elements) == 1 && isError(elements[0]) {
 			return elements[0]
 		}
 		return &object.Array{Elements: elements}
+	case *ast.BreakStatement:
+		if !env.IsInLoop() {
+			return newError("break statement outside of loop")
+		}
+		return BREAK
+	case *ast.ContinueStatement:
+		if !env.IsInLoop() {
+			return newError("continue statement outside of loop")
+		}
+		return CONTINUE
 	case *ast.IndexExpression:
 		left := Eval(node.Left, env)
 		if isError(left) {
@@ -177,7 +198,7 @@ func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) obje
 		result = Eval(statement, env)
 		if result != nil {
 			rt := result.Type()
-			if rt == object.RETURN_VALUE_OBJ || rt == object.ERROR_OBJ {
+			if rt == object.RETURN_VALUE_OBJ || rt == object.ERROR_OBJ || rt == object.BREAK_OBJ || rt == object.CONTINUE_OBJ {
 				return result
 			}
 		}
@@ -258,6 +279,50 @@ func evalArrayIndexExpression(array, index object.Object) object.Object {
 		return NULL
 	}
 	return arrayObject.Elements[idx]
+}
+
+func evalForLoopStatement(ls *ast.ForLoopStatement, env *object.Environment) object.Object {
+	var result object.Object
+	loopEnv := object.NewEnclosedEnvironment(env)
+	loopEnv.SetInLoop()
+	defer loopEnv.SetOutLoop()
+	if ls.Init != nil {
+		result = Eval(ls.Init, loopEnv)
+		if isError(result) {
+			return result
+		}
+	}
+
+	for {
+		condition := true
+		if ls.Condition != nil {
+			conditionRes := Eval(ls.Condition, loopEnv)
+			if isError(conditionRes) {
+				return conditionRes
+			}
+			condition = isTruthy(conditionRes)
+		}
+		if !condition {
+			break
+		}
+
+		result := Eval(ls.Body, loopEnv)
+		if result != nil {
+			rt := result.Type()
+			if rt == object.RETURN_VALUE_OBJ || rt == object.ERROR_OBJ || rt == object.BREAK_OBJ {
+				return result
+			}
+		}
+
+		if ls.Post != nil {
+			postRes := Eval(ls.Post, loopEnv)
+			if isError(postRes) {
+				return postRes
+			}
+		}
+
+	}
+	return result
 }
 
 func evalIfExpression(ie *ast.IfExpression, env *object.Environment) object.Object {

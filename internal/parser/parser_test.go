@@ -291,6 +291,215 @@ func TestParsingPrefixExpressions(t *testing.T) {
 	}
 }
 
+func TestAssignExpression(t *testing.T) {
+	input := "x = 5;"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statements, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.AssignStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.AssignStatement, got=%T", program.Statements[0])
+	}
+	if stmt.TokenLiteral() != "x" {
+		t.Fatalf("stmt.TokenLiteral is not 'x', got=%s", stmt.TokenLiteral())
+	}
+	if stmt.Name.Value != "x" {
+		t.Fatalf("stmt.Name.Value is not 'x', got=%s", stmt.Name.Value)
+	}
+
+}
+
+func TestAssignWithExpressionExpression(t *testing.T) {
+	testCases := []struct {
+		input    string
+		left	 interface{}
+		operator string
+		right    interface{}
+	}{
+		{"x = 5 + 2;", 5, "+", 2},
+		{"x = 5 - 2;", 5, "-", 2},
+		{"x = 5 * 2;", 5, "*", 2},
+		{"x = 5 == 2;", 5, "==", 2},
+	}
+	for _, tt := range testCases {
+		l := lexer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statements, got=%d", len(program.Statements))
+		}
+
+		stmt, ok := program.Statements[0].(*ast.AssignStatement)
+		if !ok {
+			t.Fatalf("program.Statements[0] is not ast.AssignStatement, got=%T", program.Statements[0])
+		}
+
+		if stmt.TokenLiteral() != "x" {
+			t.Fatalf("stmt.TokenLiteral is not 'x', got=%s", stmt.TokenLiteral())
+		}
+
+		res := testInfixExpression(t, stmt.Value, tt.left, tt.operator, tt.right)
+		if !res {
+			t.Fatalf("testInfixExpression error")
+		}
+	}
+}
+
+
+
+func TestForLoopParse(t *testing.T) {
+	loopTestes := []struct {
+		input string
+	}{
+		{"for(let i = 0; ; ) { puts(i); }"},
+		{"for(; i < 10; ) { puts(i); }"},
+		{"for(; ; i = i + 1) { puts(i); }"},
+		{"for(;;) { puts(i); }"},
+	}
+
+	for _, tt := range loopTestes {
+
+		l := lexer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statements, got=%d", len(program.Statements))
+		}
+
+		stmt, ok := program.Statements[0].(*ast.ForLoopStatement)
+		if !ok {
+			t.Fatalf("program.Statements[0] is not ast.ForLoopStatement, got=%T", program.Statements[0])
+		}
+		if stmt.TokenLiteral() != "for" {
+			t.Fatalf("stmt.TokenLiteral is not 'for', got=%s", stmt.TokenLiteral())
+		}
+
+	}
+
+}
+
+func TestForLoopWithBreakAndContinueParsing(t *testing.T) {
+
+	input := `for(let i = 0; i < 10; i = i + 1) {
+		continue;
+		break;
+		puts(i);
+	}`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statements, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ForLoopStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ForLoopStatement, got=%T", program.Statements[0])
+	}
+
+	if stmt.TokenLiteral() != "for" {
+		t.Fatalf("stmt.TokenLiteral is not 'for', got=%s", stmt.TokenLiteral())
+	}
+
+	containsBreak := false
+	containsContinue := false
+
+	for _, stmt := range stmt.Body.Statements {
+		if _, ok := stmt.(*ast.ContinueStatement); ok {
+			containsContinue = true
+		}
+		if _, ok := stmt.(*ast.BreakStatement); ok {
+			containsBreak = true
+		}
+	}
+	if !containsBreak || !containsContinue {
+		t.Fatalf("stmt.Body.Statements does not contain break or continue statements")
+	}
+
+}
+
+func TestForLoopLiteralParsing(t *testing.T) {
+
+	input := `for(let i = 0; i < 10; i = i + 1) { i; }`
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statements, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ForLoopStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ForLoopStatement, got=%T", program.Statements[0])
+	}
+	if stmt.TokenLiteral() != "for" {
+		t.Fatalf("stmt.TokenLiteral is not 'for', got=%s", stmt.TokenLiteral())
+	}
+
+	// test init statement
+	if stmt.Init == nil {
+		t.Fatalf("stmt.InitStatement is nil")
+	}
+	if !testLetStatement(t, stmt.Init, "i") {
+		t.Fatalf("testLetStatement error")
+	}
+	val := stmt.Init.(*ast.LetStatement).Value
+	if !testLiteralExpression(t, val, 0) {
+		t.Fatalf("testLiteralExpression error")
+	}
+
+	// test condition expression
+	if stmt.Condition == nil {
+		t.Fatalf("stmt.ConditionExpression is nil")
+	}
+	if !testInfixExpression(t, stmt.Condition, "i", "<", 10) {
+		t.Fatalf("testInfixExpression error")
+	}
+
+	// test post statement
+	if stmt.Post == nil {
+		t.Fatalf("stmt.PostStatement is nil")
+	}
+	assign, ok := stmt.Post.(*ast.AssignStatement)
+	if !ok {
+		t.Fatalf("stmt.PostStatement is not ast.AssignStatement, got=%T", stmt.Post)
+	}
+	if assign.Name.Value != "i" {
+		t.Fatalf("assign.Name.Value is not 'i', got=%s", assign.Name.Value)
+	}
+	if !testInfixExpression(t, assign.Value, "i", "+", 1) {
+		t.Fatalf("testInfixExpression error")
+	}
+
+	// test body
+	if len(stmt.Body.Statements) != 1 {
+		t.Fatalf("stmt.Body.Statements does not contain 1 statements, got=%d", len(stmt.Body.Statements))
+	}
+	bodyStmt, ok := stmt.Body.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt.Body.Statements[0] is not ast.ExpressionStatement, got=%T", stmt.Body.Statements[0])
+	}
+	if !testIdentifier(t, bodyStmt.Expression, "i") {
+		t.Fatalf("testIdentifier error")
+	}
+
+}
+
 func TestFunctionLiteralParsing(t *testing.T) {
 	input := `fn(x, y) { x + y; }`
 	l := lexer.New(input)

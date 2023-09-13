@@ -1,8 +1,9 @@
 package object
 
 type Environment struct {
-	store map[string]Object
-	outer *Environment
+	store  map[string]Object
+	outer  *Environment
+	inLoop bool
 }
 
 func (e *Environment) Get(name string) (Object, bool) {
@@ -11,6 +12,18 @@ func (e *Environment) Get(name string) (Object, bool) {
 		obj, ok = e.outer.Get(name)
 	}
 	return obj, ok
+}
+
+func (e *Environment) Upsert(name string, val Object) Object {
+	if _, ok := e.store[name]; ok {
+		e.store[name] = val
+		return val
+	}
+	if e.outer != nil {
+		return e.outer.Upsert(name, val)
+	}
+	e.store[name] = val
+	return val
 }
 
 func (e *Environment) Set(name string, val Object) Object {
@@ -27,4 +40,22 @@ func NewEnclosedEnvironment(outer *Environment) *Environment {
 	env := NewEnvironment()
 	env.outer = outer
 	return env
+}
+
+func (e *Environment) SetInLoop() {
+	e.inLoop = true
+}
+
+func (e *Environment) SetOutLoop() {
+	e.inLoop = false
+}
+
+func (e *Environment) IsInLoop() bool {
+	if e.inLoop {
+		return true
+	}
+	if e.outer != nil {
+		return e.outer.IsInLoop()
+	}
+	return false
 }

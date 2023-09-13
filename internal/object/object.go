@@ -25,6 +25,8 @@ const (
 	HASH_OBJ         = "HASH"
 	QUOTE_OBJ        = "QUOTE"
 	FLOAT_OBJ        = "FLOAT"
+	BREAK_OBJ        = "BREAK"
+	CONTINUE_OBJ     = "CONTINUE"
 )
 
 type Hashable interface {
@@ -77,7 +79,7 @@ func (f *Float) HashKey() HashKey {
 	return HashKey{Type: f.Type(), Value: h.Sum64()}
 }
 func (f *Float) Float() float64 { return f.Value }
-func (f *Float) Integer() int64         { return int64(f.Value) }
+func (f *Float) Integer() int64 { return int64(f.Value) }
 
 type Integer struct {
 	Value int64
@@ -89,7 +91,7 @@ func (i *Integer) HashKey() HashKey {
 	return HashKey{Type: i.Type(), Value: uint64(i.Value)}
 }
 func (i *Integer) Float() float64 { return float64(i.Value) }
-func (i *Integer) Integer() int64         { return i.Value }
+func (i *Integer) Integer() int64 { return i.Value }
 
 type Boolean struct {
 	Value bool
@@ -205,6 +207,16 @@ func (h *Hash) Inspect() string {
 	out.WriteString("}")
 	return out.String()
 }
+
+type Break struct{}
+
+func (br *Break) Type() ObjectType { return BREAK_OBJ }
+func (br *Break) Inspect() string  { return "break" }
+
+type Continue struct{}
+
+func (c *Continue) Type() ObjectType { return CONTINUE_OBJ }
+func (c *Continue) Inspect() string  { return "continue" }
 
 type Quote struct {
 	Node ast.Node

@@ -12,11 +12,10 @@ const (
 	EOF     = "EOF"
 
 	// 标识符 + 字面量
-	IDENT = "IDENT" // add, foobar, x, y, ...
-	INT   = "INT"   // 123456789
+	IDENT  = "IDENT"  // add, foobar, x, y, ...
+	INT    = "INT"    // 123456789
 	STRING = "STRING" // "abc"
-	FLOAT = "FLOAT" // 123.456
-
+	FLOAT  = "FLOAT"  // 123.456
 
 	// 运算符
 	ASSIGN   = "="
@@ -27,7 +26,7 @@ const (
 	SLASH    = "/"
 
 	LBRACKET = "["
-    RBRACKET = "]"
+	RBRACKET = "]"
 
 	COLON = ":"
 
@@ -41,9 +40,6 @@ const (
 	// GT_EQ = ">="
 	// AND = "&&"
 	// OR = "||"
-
-
-
 
 	// 分隔符
 	COMMA     = ","
@@ -63,21 +59,23 @@ const (
 	ELSE     = "ELSE"
 	RETURN   = "RETRUN"
 	// TODO:
-	// FOR = "FOR"
+	FOR = "FOR"
 	// WHILE = "WHILE"
-	// BREAK = "BREAK"
-	// CONTINUE = "CONTINUE"
-
+	BREAK    = "BREAK"
+	CONTINUE = "CONTINUE"
 )
 
 var keywords = map[string]TokenType{
-	"fn":     FUNCTION,
-	"let":    LET,
-	"true":   TRUE,
-	"false":  FALSE,
-	"if":     IF,
-	"else":   ELSE,
-	"return": RETURN,
+	"fn":       FUNCTION,
+	"let":      LET,
+	"true":     TRUE,
+	"false":    FALSE,
+	"if":       IF,
+	"else":     ELSE,
+	"return":   RETURN,
+	"for":      FOR,
+	"break":    BREAK,
+	"continue": CONTINUE,
 }
 
 func LookupIdent(ident string) TokenType {

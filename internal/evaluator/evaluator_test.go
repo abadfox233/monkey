@@ -292,6 +292,39 @@ func TestClosures(t *testing.T) {
 	testIntegerObject(t, testEval(input), 4)
 }
 
+func TestAssignStatement(t *testing.T) {
+	testing := []struct {
+		input    string
+		expected interface{}
+	}{
+		{"let a =\"\"; a = \"Hello World\" ", "Hello World"},
+		{"let a = 1; a = 2; a", 2},
+		{"let a = 1; a = 2 * 2; a", 4},
+		{"let a = 1; a = 2; let b = a; b", 2},
+		{"let a = 1; let b = 2; a = b==2; a", true},
+		{"let a = 1; let b = 2; a = float(a) / 2", 0.5},
+	}
+
+	for _, tt := range testing {
+		evaluated := testEval(tt.input)
+		switch expected := tt.expected.(type) {
+		case string:
+			if evaluated.(*object.String).Value != expected {
+				t.Errorf("wrong string value. expected=%q, got=%q", expected, evaluated.(*object.String).Value)
+			}
+		case int:
+			testIntegerObject(t, evaluated, int64(expected))
+		case float64:
+			testFloatObject(t, evaluated, expected)
+		case bool:
+			testBooleanObject(t, evaluated, expected)
+		default:
+			t.Errorf("unknown type %T", expected)
+		}
+	}
+
+}
+
 func TestFunctionApplication(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -416,6 +449,25 @@ func TestLetStatements(t *testing.T) {
 	for _, tt := range tests {
 		testIntegerObject(t, testEval(tt.input), tt.expected)
 	}
+}
+
+func TestForLoop(t *testing.T) {
+
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"let a = 0; for (let i = 0; i < 10; i = i + 1) { a = a + 1; }; a;", 10},
+		{"let a = 0; for (let i = 0; i < 10; i = i + 1) { a = a + 1; if(a == 5) {break;} }; a;", 5},
+		{"let a = 0; for (let i = 0; i < 10; i = i + 1) { if(a == 5) { a = a + 2; continue;} a = a + 1; }; a;", 11},
+		{"let i = 9; for (; i > 0; i = i - 1) { }; i;", 0},
+		{"let i = 9; for (; ;  ) { i = i - 1; if(i == 0){break;}  }; i;", 0},
+		{"let i = 9; for (; ; i = i - 1; ) {  if(i == 0){break;}  }; i;", 0},
+	}
+	for _, tt := range tests {
+		testIntegerObject(t, testEval(tt.input), tt.expected)
+	}
+
 }
 
 func TestReturnStatements(t *testing.T) {
