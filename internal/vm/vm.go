@@ -27,6 +27,10 @@ func New(bytecode *compiler.Bytecode) *VM {
 	}
 }
 
+func (vm *VM) LastPoppedStackElem() object.Object {
+	return vm.stack[vm.sp]
+}
+
 func (vm *VM) StackTop() object.Object {
 	if vm.sp == 0 {
 		return nil
@@ -46,6 +50,8 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return err
 			}
+		case code.OpPop:
+			vm.pop()
 		case code.OpAdd:
 			right := vm.pop()
 			left := vm.pop()
