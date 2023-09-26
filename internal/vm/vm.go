@@ -7,11 +7,10 @@ import (
 	"monkey/internal/object"
 )
 
-
 const StackSize = 2048
 
 type VM struct {
-	constants []object.Object
+	constants    []object.Object
 	instructions code.Instructions
 
 	stack []object.Object
@@ -20,10 +19,10 @@ type VM struct {
 
 func New(bytecode *compiler.Bytecode) *VM {
 	return &VM{
-		constants: bytecode.Constants,
+		constants:    bytecode.Constants,
 		instructions: bytecode.Instructions,
-		stack: make([]object.Object, StackSize),
-		sp: 0,
+		stack:        make([]object.Object, StackSize),
+		sp:           0,
 	}
 }
 
@@ -52,19 +51,11 @@ func (vm *VM) Run() error {
 			}
 		case code.OpPop:
 			vm.pop()
-		case code.OpAdd:
-			right := vm.pop()
-			left := vm.pop()
-			leftVal, ok := left.(*object.Integer)
-			if !ok {
-				return fmt.Errorf("unsupported type for add: %T", left)
+		case code.OpAdd, code.OpSub, code.OpMul, code.OpDiv:
+			err := vm.executeBinaryOperation(op)
+			if err != nil {
+				return err
 			}
-			rightVal, ok := right.(*object.Integer)
-			if !ok {
-				return fmt.Errorf("unsupported type for add: %T", right)
-			}
-			result := leftVal.Value + rightVal.Value
-			vm.push(&object.Integer{Value: result})
 		}
 	}
 	return nil
@@ -86,4 +77,44 @@ func (vm *VM) pop() object.Object {
 	obj := vm.stack[vm.sp-1]
 	vm.sp--
 	return obj
+}
+
+func (vm *VM) executeBinaryOperation(op code.Opcode) error {
+	right := vm.pop()
+	left := vm.pop()
+	leftType := left.Type()
+	rightType := right.Type()
+	if leftType == object.INTEGER_OBJ && rightType == object.INTEGER_OBJ {
+		return vm.executeBinaryIntegerOperation(op, left, right)
+	}
+	return fmt.Errorf("unsupported types for binary operation: %s %s", leftType, rightType)
+}
+
+func (vm *VM) executeBinaryIntegerOperation(op code.Opcode, left object.Object, right object.Object) error {
+	leftVal, ok := left.(*object.Integer)
+	if !ok {
+		return fmt.Errorf("unsupported type for add: %T", left)
+	}
+	rightVal, ok := right.(*object.Integer)
+	if !ok {
+		return fmt.Errorf("unsupported type for add: %T", right)
+	}
+	var result int64
+	switch op {
+	case code.OpAdd:
+		result = leftVal.Value + rightVal.Value
+	case code.OpSub:
+		result = leftVal.Value - rightVal.Value
+	case code.OpMul:
+		result = leftVal.Value * rightVal.Value
+	case code.OpDiv:
+		if rightVal.Value == 0 {
+			return fmt.Errorf("division by zero")
+		}
+		result = leftVal.Value / rightVal.Value
+	default:
+		return fmt.Errorf("unknown integer operator: %d", op)
+	}
+	vm.push(&object.Integer{Value: result})
+	return nil
 }
