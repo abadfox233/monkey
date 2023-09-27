@@ -56,6 +56,11 @@ func (vm *VM) Run() error {
 			}
 		case code.OpPop:
 			vm.pop()
+		case code.OpEqual, code.OpNotEqual, code.OpGreaterThan:
+			err := vm.executeComparison(op)
+			if err != nil {
+				return err
+			}
 		case code.OpAdd, code.OpSub, code.OpMul, code.OpDiv:
 			err := vm.executeBinaryOperation(op)
 			if err != nil {
@@ -133,3 +138,46 @@ func (vm *VM) executeBinaryIntegerOperation(op code.Opcode, left object.Object, 
 	vm.push(&object.Integer{Value: result})
 	return nil
 }
+
+func (vm *VM) executeComparison(op code.Opcode) error {
+	right := vm.pop()
+	left := vm.pop()
+	
+	if left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ {
+		return vm.executeIntegerComparison(op, left, right)
+	}
+
+	switch op {
+	case code.OpEqual:
+		vm.push(nativeBoolToBooleanObject(right == left))
+	case code.OpNotEqual:
+		vm.push(nativeBoolToBooleanObject(right != left))
+	default:
+		return fmt.Errorf("unknown operator: %d (%s %s)", op, left.Type(), right.Type())
+	}
+	return nil
+}
+
+func (vm *VM) executeIntegerComparison(op code.Opcode, left object.Object, right object.Object) error {
+	leftVal := left.(*object.Integer).Value
+	rightVal := right.(*object.Integer).Value
+	switch op {
+	case code.OpEqual:
+		vm.push(nativeBoolToBooleanObject(leftVal == rightVal))
+	case code.OpNotEqual:
+		vm.push(nativeBoolToBooleanObject(leftVal != rightVal))
+	case code.OpGreaterThan:
+		vm.push(nativeBoolToBooleanObject(leftVal > rightVal))
+	default:
+		return fmt.Errorf("unknown operator: %d", op)
+	}
+	return nil
+}
+
+func nativeBoolToBooleanObject(input bool) *object.Boolean {
+	if input {
+		return True
+	}
+	return False
+}
+
