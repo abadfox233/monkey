@@ -42,6 +42,10 @@ func (c *Compiler) Compile(node ast.Node) error {
 			return err
 		}
 		c.emit(code.OpPop)
+	case *ast.LetStatement:
+		if err := c.Compile(node.Value); err != nil {
+			return err
+		}
 	case *ast.IfExpression:
 		if err := c.Compile(node.Condition); err != nil {
 			return err
