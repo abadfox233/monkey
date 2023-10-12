@@ -7,7 +7,11 @@ import (
 	"monkey/internal/object"
 )
 
-const StackSize = 2048
+const (
+	StackSize = 2048
+	GlobalSize = 65536
+)
+
 
 var (
 	True  = &object.Boolean{Value: true}
@@ -21,6 +25,13 @@ type VM struct {
 
 	stack []object.Object
 	sp    int // 始终指向下一个空闲的栈位置。 栈顶的值是 stack[sp-1]。
+	globals []object.Object
+}
+
+func NewWithGlobalStore(bytecode *compiler.Bytecode, globals []object.Object) *VM {
+	vm := New(bytecode)
+	vm.globals = globals
+	return vm
 }
 
 func New(bytecode *compiler.Bytecode) *VM {
@@ -29,6 +40,7 @@ func New(bytecode *compiler.Bytecode) *VM {
 		instructions: bytecode.Instructions,
 		stack:        make([]object.Object, StackSize),
 		sp:           0,
+		globals:      make([]object.Object, GlobalSize),
 	}
 }
 
@@ -64,6 +76,17 @@ func (vm *VM) Run() error {
 			condition := vm.pop()
 			if !isTruthy(condition) {
 				ip = pos - 1
+			}
+		case code.OpSetGlobal:
+			globalIndex := code.ReadUint16(vm.instructions[ip+1:])
+			ip += 2
+			vm.globals[globalIndex] = vm.pop()
+		case code.OpGetGlobal:
+			globalIndex := code.ReadUint16(vm.instructions[ip+1:])
+			ip += 2
+			err := vm.push(vm.globals[globalIndex])
+			if err != nil {
+				return err
 			}
 		case code.OpPop:
 			vm.pop()
