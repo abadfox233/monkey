@@ -60,6 +60,13 @@ func (c *Compiler) Compile(node ast.Node) error {
 		}
 		symbol := c.symbolTable.Define(node.Name.Value)
 		c.emit(code.OpSetGlobal, symbol.Index)
+	case *ast.ArrayLiteral:
+		for _, elem := range node.Elements {
+			if err := c.Compile(elem); err != nil {
+				return err
+			}
+		}
+		c.emit(code.OpArray, len(node.Elements))
 	case *ast.IfExpression:
 		if err := c.Compile(node.Condition); err != nil {
 			return err
