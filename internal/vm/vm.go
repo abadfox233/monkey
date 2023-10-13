@@ -8,23 +8,22 @@ import (
 )
 
 const (
-	StackSize = 2048
+	StackSize  = 2048
 	GlobalSize = 65536
 )
-
 
 var (
 	True  = &object.Boolean{Value: true}
 	False = &object.Boolean{Value: false}
-	Null = &object.Null{}
+	Null  = &object.Null{}
 )
 
 type VM struct {
 	constants    []object.Object
 	instructions code.Instructions
 
-	stack []object.Object
-	sp    int // 始终指向下一个空闲的栈位置。 栈顶的值是 stack[sp-1]。
+	stack   []object.Object
+	sp      int // 始终指向下一个空闲的栈位置。 栈顶的值是 stack[sp-1]。
 	globals []object.Object
 }
 
@@ -153,10 +152,14 @@ func (vm *VM) executeBinaryOperation(op code.Opcode) error {
 	left := vm.pop()
 	leftType := left.Type()
 	rightType := right.Type()
-	if leftType == object.INTEGER_OBJ && rightType == object.INTEGER_OBJ {
+	switch {
+	case leftType == object.INTEGER_OBJ && rightType == object.INTEGER_OBJ:
 		return vm.executeBinaryIntegerOperation(op, left, right)
+	case leftType == object.STRING_OBJ && rightType == object.STRING_OBJ:
+		return vm.executeBinaryStringOperation(op, left, right)
+	default:
+		return fmt.Errorf("unsupported types for binary operation: %s %s", leftType, rightType)
 	}
-	return fmt.Errorf("unsupported types for binary operation: %s %s", leftType, rightType)
 }
 
 func (vm *VM) executeBinaryIntegerOperation(op code.Opcode, left object.Object, right object.Object) error {
@@ -185,6 +188,26 @@ func (vm *VM) executeBinaryIntegerOperation(op code.Opcode, left object.Object, 
 		return fmt.Errorf("unknown integer operator: %d", op)
 	}
 	vm.push(&object.Integer{Value: result})
+	return nil
+}
+
+func (vm *VM) executeBinaryStringOperation(op code.Opcode, left object.Object, right object.Object) error {
+	leftVal, ok := left.(*object.String)
+	if !ok {
+		return fmt.Errorf("unsupported type for add: %T", left)
+	}
+	rightVal, ok := right.(*object.String)
+	if !ok {
+		return fmt.Errorf("unsupported type for add: %T", right)
+	}
+	var result string
+	switch op {
+	case code.OpAdd:
+		result = leftVal.Value + rightVal.Value
+	default:
+		return fmt.Errorf("unknown string operator: %d", op)
+	}
+	vm.push(&object.String{Value: result})
 	return nil
 }
 
