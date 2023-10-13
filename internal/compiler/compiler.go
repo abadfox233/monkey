@@ -5,6 +5,7 @@ import (
 	"monkey/internal/ast"
 	"monkey/internal/code"
 	"monkey/internal/object"
+	"sort"
 )
 
 type EmittedInstruction struct {
@@ -67,6 +68,24 @@ func (c *Compiler) Compile(node ast.Node) error {
 			}
 		}
 		c.emit(code.OpArray, len(node.Elements))
+	case *ast.HashLiteral:
+		keys := []ast.Expression{}
+		for key := range node.Pairs {
+			keys = append(keys, key)
+		}
+		sort.Slice(keys, func(i, j int) bool {
+			return keys[i].String() < keys[j].String()
+		})
+		for _, key := range keys {
+			if err := c.Compile(key); err != nil {
+				return err
+			}
+
+			if err := c.Compile(node.Pairs[key]); err != nil {
+				return err
+			}
+		}
+		c.emit(code.OpHash, len(node.Pairs)*2)
 	case *ast.IfExpression:
 		if err := c.Compile(node.Condition); err != nil {
 			return err
