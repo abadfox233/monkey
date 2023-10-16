@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"monkey/internal/ast"
+	"monkey/internal/code"
 	"strings"
 )
 
@@ -27,6 +28,7 @@ const (
 	FLOAT_OBJ        = "FLOAT"
 	BREAK_OBJ        = "BREAK"
 	CONTINUE_OBJ     = "CONTINUE"
+	COMPILED_FUNCTION_OBJ = "COMPILED_FUNCTION"
 )
 
 type Hashable interface {
@@ -48,6 +50,7 @@ var _ Object = (*String)(nil)
 var _ Object = (*Builtin)(nil)
 var _ Object = (*Array)(nil)
 var _ Object = (*Float)(nil)
+var _ Object = (*CompiledFunction)(nil)
 
 var _ Hashable = (*String)(nil)
 var _ Hashable = (*Boolean)(nil)
@@ -226,3 +229,15 @@ func (q *Quote) Type() ObjectType { return QUOTE_OBJ }
 func (q *Quote) Inspect() string {
 	return "QUOTE(" + q.Node.String() + ")"
 }
+
+
+type CompiledFunction struct {
+	Instructions  code.Instructions
+}
+
+func (cf *CompiledFunction) Type() ObjectType { return COMPILED_FUNCTION_OBJ }
+
+func (cf *CompiledFunction) Inspect() string {
+	return fmt.Sprintf("CompiledFunction[%p]", cf)
+}
+
