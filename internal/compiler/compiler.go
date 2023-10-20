@@ -45,18 +45,11 @@ func New() *Compiler {
 
 func NewWithState(symbolTable *SymbolTable, constants []object.Object) *Compiler {
 
-	mainScope := CompilationScope{
-		instructions:        code.Instructions{},
-		lastInstruction:     EmittedInstruction{},
-		previousInstruction: EmittedInstruction{},
-	}
+	compiler := New()
+	compiler.symbolTable = symbolTable
+	compiler.constants = constants
 
-	return &Compiler{
-		constants:   constants,
-		symbolTable: symbolTable,
-		scopes:      []CompilationScope{mainScope},
-		scopeIndex:  0,
-	}
+	return compiler
 }
 
 func (c *Compiler) Compile(node ast.Node) error {

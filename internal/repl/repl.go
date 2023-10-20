@@ -65,6 +65,7 @@ func Start(in io.Reader, out io.Writer) {
 			fmt.Fprintf(out, "Woops! Compilation failed:\n %s\n", err)
 			continue
 		}
+		constants = comp.Bytecode().Constants
 		machine := vm.NewWithGlobalStore(comp.Bytecode(), golbals)
 		if err := machine.Run(); err != nil {
 			fmt.Fprintf(out, "Woops! Executing bytecode failed:\n %s\n", err)
