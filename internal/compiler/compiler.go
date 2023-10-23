@@ -126,6 +126,10 @@ func (c *Compiler) Compile(node ast.Node) error {
 	case *ast.FunctionLiteral:
 		c.enterScope()
 
+		for _, param := range node.Parameters {
+			c.symbolTable.Define(param.Value)
+		}
+
 		err := c.Compile(node.Body)
 		if err != nil {
 			return err
