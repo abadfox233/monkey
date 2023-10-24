@@ -20,7 +20,7 @@ var Builtins = []struct {
 					return &Integer{Value: int64(len(arg.Elements))}
 
 				default:
-					return newError("argument to `len` not supported, got %s", args[0].Type())
+					return newError("argument to 'len' not supported, got %s", args[0].Type())
 				}
 			},
 		},
@@ -56,7 +56,7 @@ var Builtins = []struct {
 					}
 					return nil
 				default:
-					return newError("argument to `first` not supported, got %s", args[0].Type())
+					return newError("argument to 'first' not supported, got %s", args[0].Type())
 				}
 			},
 		},
@@ -83,7 +83,7 @@ var Builtins = []struct {
 					}
 					return nil
 				default:
-					return newError("argument to `last` not supported, got %s", args[0].Type())
+					return newError("argument to 'last' not supported, got %s", args[0].Type())
 				}
 			},
 		},

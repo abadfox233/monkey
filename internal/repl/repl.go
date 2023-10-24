@@ -35,6 +35,9 @@ func Start(in io.Reader, out io.Writer) {
 	constants := []object.Object{}
 	golbals := make([]object.Object, vm.GlobalSize)
 	symbolTable := compiler.NewSymbolTable()
+	for i, v := range object.Builtins {
+		symbolTable.DefineBuiltin(i, v.Name)
+	}
 	// env := object.NewEnvironment()
 
 	for {
