@@ -37,6 +37,8 @@ func (ins Instructions) instructionToString(def *Definition, operands []int) str
 		return def.Name
 	case 1:
 		return fmt.Sprintf("%s %d", def.Name, operands[0])
+	case 2:
+		return fmt.Sprintf("%s %d %d", def.Name, operands[0], operands[1])
 	}
 	return fmt.Sprintf("ERROR: unhandled operandCount for %s\n", def.Name)
 
@@ -82,6 +84,8 @@ const (
 	OpSetLocal
 
 	OpGetBuiltin
+
+	OpClosure
 )
 
 type Definition struct {
@@ -117,6 +121,7 @@ var definitions = map[Opcode]*Definition{
 	OpGetLocal:      {"OpGetLocal", []int{1}},
 	OpSetLocal:      {"OpSetLocal", []int{1}},
 	OpGetBuiltin:    {"OpGetBuiltin", []int{1}},
+	OpClosure:       {"OpClosure", []int{2, 1}},
 }
 
 func Lookup(op byte) (*Definition, error) {
