@@ -299,6 +299,9 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 	p.nextToken()
 	// 解析等号右侧的表达式
 	stmt.Value = p.parseExpression(LOWEST)
+	if fl, ok := stmt.Value.(*ast.FunctionLiteral); ok {
+		fl.Name = stmt.Name.Value
+	}
 	// 解析分号
 	for p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
